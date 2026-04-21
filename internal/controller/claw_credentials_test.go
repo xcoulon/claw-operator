@@ -201,7 +201,7 @@ func TestOpenClawCredentialValidation(t *testing.T) {
 				assert.Equal(t, "False", string(c.Status))
 				assert.Equal(t, clawv1alpha1.ConditionReasonValidationFailed, c.Reason)
 			}
-			if c.Type == clawv1alpha1.ConditionTypeReady {
+			if c.Type == clawv1alpha1.ConditionTypeDeploymentsReady {
 				readyFound = true
 				assert.Equal(t, "False", string(c.Status))
 				assert.Equal(t, clawv1alpha1.ConditionReasonValidationFailed, c.Reason)
@@ -209,7 +209,7 @@ func TestOpenClawCredentialValidation(t *testing.T) {
 			}
 		}
 		assert.True(t, credFound, "CredentialsResolved=False condition should be set on validation failure")
-		assert.True(t, readyFound, "Ready=False condition should be set on validation failure")
+		assert.True(t, readyFound, "DeploymentsReady=False condition should be set on validation failure")
 	})
 
 	t.Run("should set CredentialsResolved condition", func(t *testing.T) {

@@ -144,14 +144,14 @@ func setCondition(instance *clawv1alpha1.Claw, condType string, status metav1.Co
 	})
 }
 
-// setReadyCondition sets the Ready condition on the Claw instance based on deployment readiness
-func setReadyCondition(instance *clawv1alpha1.Claw, ready bool, pendingDeployments []string) {
+// setDeploymentsReadyCondition sets the DeploymentsReady condition on the Claw instance based on deployment readiness
+func setDeploymentsReadyCondition(instance *clawv1alpha1.Claw, ready bool, pendingDeployments []string) {
 	var status metav1.ConditionStatus
 	var reason, message string
 
 	if ready {
 		status = metav1.ConditionTrue
-		reason = clawv1alpha1.ConditionReasonReady
+		reason = clawv1alpha1.ConditionReasonPodsRunning
 		message = "Claw instance is ready"
 	} else {
 		status = metav1.ConditionFalse
@@ -164,7 +164,7 @@ func setReadyCondition(instance *clawv1alpha1.Claw, ready bool, pendingDeploymen
 	}
 
 	meta.SetStatusCondition(&instance.Status.Conditions, metav1.Condition{
-		Type:               clawv1alpha1.ConditionTypeReady,
+		Type:               clawv1alpha1.ConditionTypeDeploymentsReady,
 		Status:             status,
 		Reason:             reason,
 		Message:            message,
@@ -224,8 +224,8 @@ func (r *ClawResourceReconciler) updateStatus(ctx context.Context, instance *cla
 		return fmt.Errorf("failed to check deployment readiness: %w", err)
 	}
 
-	// Set Ready condition
-	setReadyCondition(instance, ready, pending)
+	// Set DeploymentsReady condition
+	setDeploymentsReadyCondition(instance, ready, pending)
 
 	// Expose gateway secret name in status
 	instance.Status.GatewayTokenSecretRef = ClawGatewaySecretName

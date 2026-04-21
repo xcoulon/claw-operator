@@ -131,7 +131,7 @@ func (r *ClawResourceReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		if err := resolveProviderDefaults(&instance.Spec.Credentials[i]); err != nil {
 			logger.Error(err, "Failed to resolve provider defaults")
 			setCondition(instance, clawv1alpha1.ConditionTypeCredentialsResolved, metav1.ConditionFalse, clawv1alpha1.ConditionReasonValidationFailed, err.Error())
-			setCondition(instance, clawv1alpha1.ConditionTypeReady, metav1.ConditionFalse, clawv1alpha1.ConditionReasonValidationFailed, err.Error())
+			setCondition(instance, clawv1alpha1.ConditionTypeDeploymentsReady, metav1.ConditionFalse, clawv1alpha1.ConditionReasonValidationFailed, err.Error())
 			if statusErr := r.Status().Update(ctx, instance); statusErr != nil {
 				logger.Error(statusErr, "Failed to update status after provider defaults failure")
 			}
@@ -143,7 +143,7 @@ func (r *ClawResourceReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	if err := r.validateCredentials(ctx, instance); err != nil {
 		logger.Error(err, "Credential validation failed")
 		setCondition(instance, clawv1alpha1.ConditionTypeCredentialsResolved, metav1.ConditionFalse, clawv1alpha1.ConditionReasonValidationFailed, err.Error())
-		setCondition(instance, clawv1alpha1.ConditionTypeReady, metav1.ConditionFalse, clawv1alpha1.ConditionReasonValidationFailed, err.Error())
+		setCondition(instance, clawv1alpha1.ConditionTypeDeploymentsReady, metav1.ConditionFalse, clawv1alpha1.ConditionReasonValidationFailed, err.Error())
 		if statusErr := r.Status().Update(ctx, instance); statusErr != nil {
 			logger.Error(statusErr, "Failed to update status after credential validation failure")
 		}
@@ -284,7 +284,7 @@ func (r *ClawResourceReconciler) applyProxyResources(ctx context.Context, instan
 	if err != nil {
 		logger.Error(err, "Failed to generate proxy config")
 		setCondition(instance, clawv1alpha1.ConditionTypeProxyConfigured, metav1.ConditionFalse, clawv1alpha1.ConditionReasonConfigFailed, err.Error())
-		setCondition(instance, clawv1alpha1.ConditionTypeReady, metav1.ConditionFalse, clawv1alpha1.ConditionReasonConfigFailed, err.Error())
+		setCondition(instance, clawv1alpha1.ConditionTypeDeploymentsReady, metav1.ConditionFalse, clawv1alpha1.ConditionReasonConfigFailed, err.Error())
 		if statusErr := r.Status().Update(ctx, instance); statusErr != nil {
 			logger.Error(statusErr, "Failed to update status after proxy config failure")
 		}
@@ -294,7 +294,7 @@ func (r *ClawResourceReconciler) applyProxyResources(ctx context.Context, instan
 	if err := r.applyProxyConfigMap(ctx, instance, proxyConfigJSON); err != nil {
 		logger.Error(err, "Failed to apply proxy config")
 		setCondition(instance, clawv1alpha1.ConditionTypeProxyConfigured, metav1.ConditionFalse, clawv1alpha1.ConditionReasonConfigFailed, err.Error())
-		setCondition(instance, clawv1alpha1.ConditionTypeReady, metav1.ConditionFalse, clawv1alpha1.ConditionReasonConfigFailed, err.Error())
+		setCondition(instance, clawv1alpha1.ConditionTypeDeploymentsReady, metav1.ConditionFalse, clawv1alpha1.ConditionReasonConfigFailed, err.Error())
 		if statusErr := r.Status().Update(ctx, instance); statusErr != nil {
 			logger.Error(statusErr, "Failed to update status after proxy config failure")
 		}
@@ -303,7 +303,7 @@ func (r *ClawResourceReconciler) applyProxyResources(ctx context.Context, instan
 	if err := r.applyVertexADCConfigMap(ctx, instance); err != nil {
 		logger.Error(err, "Failed to apply Vertex ADC config")
 		setCondition(instance, clawv1alpha1.ConditionTypeProxyConfigured, metav1.ConditionFalse, clawv1alpha1.ConditionReasonConfigFailed, err.Error())
-		setCondition(instance, clawv1alpha1.ConditionTypeReady, metav1.ConditionFalse, clawv1alpha1.ConditionReasonConfigFailed, err.Error())
+		setCondition(instance, clawv1alpha1.ConditionTypeDeploymentsReady, metav1.ConditionFalse, clawv1alpha1.ConditionReasonConfigFailed, err.Error())
 		if statusErr := r.Status().Update(ctx, instance); statusErr != nil {
 			logger.Error(statusErr, "Failed to update status after Vertex ADC config failure")
 		}

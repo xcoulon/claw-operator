@@ -77,7 +77,7 @@ func TestOpenClawStatusConditions(t *testing.T) {
 			assert.Equal(t, ClawGatewaySecretName, updatedInstance.Status.GatewayTokenSecretRef)
 		})
 
-		t.Run("should set Ready condition to False after initial resource creation", func(t *testing.T) {
+		t.Run("should set DeploymentsReady condition to False after initial resource creation", func(t *testing.T) {
 			t.Cleanup(func() {
 				deleteAndWaitAllResources(t, namespace)
 			})
@@ -110,12 +110,12 @@ func TestOpenClawStatusConditions(t *testing.T) {
 				if err != nil {
 					return false
 				}
-				condition := meta.FindStatusCondition(updatedInstance.Status.Conditions, clawv1alpha1.ConditionTypeReady)
+				condition := meta.FindStatusCondition(updatedInstance.Status.Conditions, clawv1alpha1.ConditionTypeDeploymentsReady)
 				return condition != nil && condition.Status == metav1.ConditionFalse && condition.Reason == clawv1alpha1.ConditionReasonProvisioning
-			}, "Ready condition should be False with Provisioning reason")
+			}, "DeploymentsReady condition should be False with Provisioning reason")
 		})
 
-		t.Run("should keep Ready condition False when only claw Deployment is ready", func(t *testing.T) {
+		t.Run("should keep DeploymentsReady condition False when only claw Deployment is ready", func(t *testing.T) {
 			t.Cleanup(func() {
 				deleteAndWaitAllResources(t, namespace)
 			})
@@ -166,13 +166,13 @@ func TestOpenClawStatusConditions(t *testing.T) {
 
 			updatedInstance := &clawv1alpha1.Claw{}
 			require.NoError(t, k8sClient.Get(ctx, client.ObjectKey{Name: resourceName, Namespace: namespace}, updatedInstance), "failed to get updated instance")
-			condition := meta.FindStatusCondition(updatedInstance.Status.Conditions, clawv1alpha1.ConditionTypeReady)
-			require.NotNil(t, condition, "Ready condition should not be nil")
-			assert.Equal(t, metav1.ConditionFalse, condition.Status, "Ready condition status")
-			assert.Equal(t, clawv1alpha1.ConditionReasonProvisioning, condition.Reason, "Ready condition reason")
+			condition := meta.FindStatusCondition(updatedInstance.Status.Conditions, clawv1alpha1.ConditionTypeDeploymentsReady)
+			require.NotNil(t, condition, "DeploymentsReady condition should not be nil")
+			assert.Equal(t, metav1.ConditionFalse, condition.Status, "DeploymentsReady condition status")
+			assert.Equal(t, clawv1alpha1.ConditionReasonProvisioning, condition.Reason, "DeploymentsReady condition reason")
 		})
 
-		t.Run("should keep Ready condition False when only claw-proxy Deployment is ready", func(t *testing.T) {
+		t.Run("should keep DeploymentsReady condition False when only claw-proxy Deployment is ready", func(t *testing.T) {
 			t.Cleanup(func() {
 				deleteAndWaitAllResources(t, namespace)
 			})
@@ -223,13 +223,13 @@ func TestOpenClawStatusConditions(t *testing.T) {
 
 			updatedInstance := &clawv1alpha1.Claw{}
 			require.NoError(t, k8sClient.Get(ctx, client.ObjectKey{Name: resourceName, Namespace: namespace}, updatedInstance), "failed to get updated instance")
-			condition := meta.FindStatusCondition(updatedInstance.Status.Conditions, clawv1alpha1.ConditionTypeReady)
-			require.NotNil(t, condition, "Ready condition should not be nil")
-			assert.Equal(t, metav1.ConditionFalse, condition.Status, "Ready condition status")
-			assert.Equal(t, clawv1alpha1.ConditionReasonProvisioning, condition.Reason, "Ready condition reason")
+			condition := meta.FindStatusCondition(updatedInstance.Status.Conditions, clawv1alpha1.ConditionTypeDeploymentsReady)
+			require.NotNil(t, condition, "DeploymentsReady condition should not be nil")
+			assert.Equal(t, metav1.ConditionFalse, condition.Status, "DeploymentsReady condition status")
+			assert.Equal(t, clawv1alpha1.ConditionReasonProvisioning, condition.Reason, "DeploymentsReady condition reason")
 		})
 
-		t.Run("should set Ready condition to True when both Deployments are ready", func(t *testing.T) {
+		t.Run("should set DeploymentsReady condition to True when both Deployments are ready", func(t *testing.T) {
 			t.Cleanup(func() {
 				deleteAndWaitAllResources(t, namespace)
 			})
@@ -294,10 +294,10 @@ func TestOpenClawStatusConditions(t *testing.T) {
 
 			updatedInstance := &clawv1alpha1.Claw{}
 			require.NoError(t, k8sClient.Get(ctx, client.ObjectKey{Name: resourceName, Namespace: namespace}, updatedInstance), "failed to get updated instance")
-			condition := meta.FindStatusCondition(updatedInstance.Status.Conditions, clawv1alpha1.ConditionTypeReady)
-			require.NotNil(t, condition, "Ready condition should not be nil")
-			assert.Equal(t, metav1.ConditionTrue, condition.Status, "Ready condition status")
-			assert.Equal(t, clawv1alpha1.ConditionReasonReady, condition.Reason, "Ready condition reason")
+			condition := meta.FindStatusCondition(updatedInstance.Status.Conditions, clawv1alpha1.ConditionTypeDeploymentsReady)
+			require.NotNil(t, condition, "DeploymentsReady condition should not be nil")
+			assert.Equal(t, metav1.ConditionTrue, condition.Status, "DeploymentsReady condition status")
+			assert.Equal(t, clawv1alpha1.ConditionReasonPodsRunning, condition.Reason, "DeploymentsReady condition reason")
 		})
 
 		t.Run("should update LastTransitionTime only on status change", func(t *testing.T) {
@@ -334,13 +334,13 @@ func TestOpenClawStatusConditions(t *testing.T) {
 				if err != nil {
 					return false
 				}
-				condition := meta.FindStatusCondition(updatedInstance.Status.Conditions, clawv1alpha1.ConditionTypeReady)
+				condition := meta.FindStatusCondition(updatedInstance.Status.Conditions, clawv1alpha1.ConditionTypeDeploymentsReady)
 				if condition != nil {
 					initialTransitionTime = condition.LastTransitionTime
 					return true
 				}
 				return false
-			}, "initial Ready condition should be set")
+			}, "initial DeploymentsReady condition should be set")
 
 			deployment := &appsv1.Deployment{}
 			waitFor(t, timeout, interval, func() bool {
@@ -385,13 +385,13 @@ func TestOpenClawStatusConditions(t *testing.T) {
 				if err != nil {
 					return false
 				}
-				condition := meta.FindStatusCondition(updatedInstance.Status.Conditions, clawv1alpha1.ConditionTypeReady)
+				condition := meta.FindStatusCondition(updatedInstance.Status.Conditions, clawv1alpha1.ConditionTypeDeploymentsReady)
 				if condition != nil && condition.Status == metav1.ConditionTrue {
 					secondTransitionTime = condition.LastTransitionTime
 					return true
 				}
 				return false
-			}, "Ready condition should transition to True")
+			}, "DeploymentsReady condition should transition to True")
 
 			assert.False(t, secondTransitionTime.Time.Before(initialTransitionTime.Time), "LastTransitionTime should not go backwards")
 		})
@@ -430,13 +430,13 @@ func TestOpenClawStatusConditions(t *testing.T) {
 				if err != nil {
 					return false
 				}
-				condition := meta.FindStatusCondition(updatedInstance.Status.Conditions, clawv1alpha1.ConditionTypeReady)
+				condition := meta.FindStatusCondition(updatedInstance.Status.Conditions, clawv1alpha1.ConditionTypeDeploymentsReady)
 				if condition != nil && condition.Status == metav1.ConditionFalse {
 					initialTransitionTime = condition.LastTransitionTime
 					return true
 				}
 				return false
-			}, "initial Ready condition should be False")
+			}, "initial DeploymentsReady condition should be False")
 
 			_, err = reconciler.Reconcile(ctx, ctrl.Request{
 				NamespacedName: client.ObjectKey{
@@ -448,9 +448,9 @@ func TestOpenClawStatusConditions(t *testing.T) {
 
 			updatedInstance := &clawv1alpha1.Claw{}
 			require.NoError(t, k8sClient.Get(ctx, client.ObjectKey{Name: resourceName, Namespace: namespace}, updatedInstance), "failed to get updated instance")
-			condition := meta.FindStatusCondition(updatedInstance.Status.Conditions, clawv1alpha1.ConditionTypeReady)
-			require.NotNil(t, condition, "Ready condition should not be nil")
-			assert.Equal(t, metav1.ConditionFalse, condition.Status, "Ready condition status")
+			condition := meta.FindStatusCondition(updatedInstance.Status.Conditions, clawv1alpha1.ConditionTypeDeploymentsReady)
+			require.NotNil(t, condition, "DeploymentsReady condition should not be nil")
+			assert.Equal(t, metav1.ConditionFalse, condition.Status, "DeploymentsReady condition status")
 			assert.Equal(t, initialTransitionTime, condition.LastTransitionTime, "LastTransitionTime should not have changed")
 		})
 
@@ -487,9 +487,9 @@ func TestOpenClawStatusConditions(t *testing.T) {
 				if err != nil {
 					return false
 				}
-				condition := meta.FindStatusCondition(updatedInstance.Status.Conditions, clawv1alpha1.ConditionTypeReady)
+				condition := meta.FindStatusCondition(updatedInstance.Status.Conditions, clawv1alpha1.ConditionTypeDeploymentsReady)
 				return condition != nil && condition.Status == metav1.ConditionFalse
-			}, "Ready condition should be set to False when deployments are missing")
+			}, "DeploymentsReady condition should be set to False when deployments are missing")
 		})
 
 		t.Run("should set ObservedGeneration correctly in conditions", func(t *testing.T) {
@@ -525,7 +525,7 @@ func TestOpenClawStatusConditions(t *testing.T) {
 				if err != nil {
 					return false
 				}
-				condition := meta.FindStatusCondition(updatedInstance.Status.Conditions, clawv1alpha1.ConditionTypeReady)
+				condition := meta.FindStatusCondition(updatedInstance.Status.Conditions, clawv1alpha1.ConditionTypeDeploymentsReady)
 				return condition != nil && condition.ObservedGeneration == updatedInstance.Generation
 			}, "ObservedGeneration should match instance generation")
 		})

@@ -35,7 +35,7 @@ const (
 
 // Condition types for Claw status.
 const (
-	ConditionTypeReady               = "Ready"
+	ConditionTypeDeploymentsReady    = "DeploymentsReady"
 	ConditionTypeCredentialsResolved = "CredentialsResolved"
 	ConditionTypeProxyConfigured     = "ProxyConfigured"
 )
@@ -49,7 +49,7 @@ const (
 
 // Condition reasons for Claw status.
 const (
-	ConditionReasonReady            = "Ready"
+	ConditionReasonPodsRunning      = "PodsRunning"
 	ConditionReasonProvisioning     = "Provisioning"
 	ConditionReasonResolved         = "Resolved"
 	ConditionReasonValidationFailed = "ValidationFailed"
@@ -195,8 +195,8 @@ type ClawStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:path=claws,scope=Namespaced
-// +kubebuilder:printcolumn:name="Ready",type="string",JSONPath=".status.conditions[?(@.type==\"Ready\")].status"
-// +kubebuilder:printcolumn:name="Reason",type="string",JSONPath=".status.conditions[?(@.type==\"Ready\")].reason"
+// +kubebuilder:printcolumn:name="Ready",type="string",JSONPath=".status.conditions[?(@.type==\"DeploymentsReady\")].status"
+// +kubebuilder:printcolumn:name="Reason",type="string",JSONPath=".status.conditions[?(@.type==\"DeploymentsReady\")].reason"
 
 // Claw is the Schema for the claws API
 type Claw struct {

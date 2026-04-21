@@ -14,20 +14,33 @@ The ClawStatus struct SHALL include a Conditions field of type []metav1.Conditio
 - **THEN** the generated CRD YAML SHALL include status subresource configuration
 - **THEN** the status.conditions field SHALL be present in the OpenAPI schema
 
-### Requirement: Ready condition indicates overall readiness
-The controller SHALL maintain a Ready condition type to indicate whether the Claw instance is ready for use.
+### Requirement: DeploymentsReady condition indicates deployment readiness
+The controller SHALL maintain a DeploymentsReady condition type to indicate whether the Claw deployment pods are running.
 
-#### Scenario: Ready condition set to False during provisioning
-- **WHEN** a Claw instance named 'instance' is created
-- **THEN** the controller SHALL set Ready condition with status=False, reason=Provisioning, message describing deployment progress
+#### Scenario: DeploymentsReady condition set to True when pods running
+- **WHEN** both claw and claw-proxy Deployments have Available=True status
+- **THEN** the controller SHALL set DeploymentsReady condition with status=True, reason=PodsRunning, message confirming both deployments are available
 
-#### Scenario: Ready condition set to True when ready
-- **WHEN** both openclaw and openclaw-proxy Deployments have Available=True status
-- **THEN** the controller SHALL set Ready condition with status=True, reason=Ready, message confirming both deployments are ready
+#### Scenario: DeploymentsReady condition set to False when pods not ready
+- **WHEN** either claw or claw-proxy Deployment has Available condition not equal to True
+- **THEN** the controller SHALL set DeploymentsReady condition with status=False, reason=Provisioning, message indicating which deployments are pending
 
-#### Scenario: Ready condition remains False if any deployment not ready
-- **WHEN** either openclaw or openclaw-proxy Deployment has Available condition not equal to True
-- **THEN** the controller SHALL keep Ready condition at status=False, reason=Provisioning
+#### Scenario: DeploymentsReady uses same deployment check logic
+- **WHEN** evaluating DeploymentsReady condition status
+- **THEN** the controller SHALL fetch both claw and claw-proxy Deployments and check their Available conditions
+- **THEN** the controller SHALL use the same deployment readiness check that was previously used for the Ready condition
+
+### Requirement: Claw CRD includes printcolumn for condition status
+The Claw CRD SHALL include a printcolumn that displays the DeploymentsReady condition status.
+
+#### Scenario: Printcolumn shows DeploymentsReady status
+- **WHEN** examining the Claw CRD kubebuilder markers in api/v1alpha1/claw_types.go
+- **THEN** the printcolumn SHALL be named "Ready" for display purposes
+- **THEN** the printcolumn SHALL use JSONPath `.status.conditions[?(@.type=="DeploymentsReady")].status`
+
+#### Scenario: Printcolumn shows DeploymentsReady reason
+- **WHEN** examining the Claw CRD kubebuilder markers in api/v1alpha1/claw_types.go
+- **THEN** the Reason printcolumn SHALL use JSONPath `.status.conditions[?(@.type=="DeploymentsReady")].reason`
 
 ### Requirement: CredentialsResolved condition tracks credential validation
 The controller SHALL maintain a CredentialsResolved condition type to indicate whether all credential Secrets have been validated.
@@ -111,32 +124,34 @@ Each condition SHALL include all standard metav1.Condition fields: Type, Status,
 - **THEN** the condition SHALL have ObservedGeneration set to the Claw resource's metadata.generation
 - **THEN** the condition SHALL have LastTransitionTime set to the time of the status change
 
-### Requirement: Ready condition reasons are well-defined
-The Ready condition SHALL use standardized reason values for common states.
 
-#### Scenario: Provisioning reason when deployments not ready
-- **WHEN** one or both Deployments are not yet available
-- **THEN** the Ready condition SHALL have reason=Provisioning
-- **THEN** the message SHALL indicate which deployments are pending
+### Requirement: DeploymentsReady condition type and reason constants defined
+The API package SHALL define constants for the DeploymentsReady condition type and its reasons.
 
-#### Scenario: Ready reason when fully available
-- **WHEN** both Deployments report Available=True
-- **THEN** the Ready condition SHALL have reason=Ready
-- **THEN** the message SHALL confirm the instance is ready for use
+#### Scenario: DeploymentsReady condition type constant exists
+- **WHEN** examining api/v1alpha1/claw_types.go
+- **THEN** it SHALL define ConditionTypeDeploymentsReady = "DeploymentsReady"
+
+#### Scenario: PodsRunning reason constant exists
+- **WHEN** examining api/v1alpha1/claw_types.go
+- **THEN** it SHALL define ConditionReasonPodsRunning = "PodsRunning"
+- **THEN** this reason SHALL be used when both deployments are available
+
+#### Scenario: Provisioning reason constant remains
+- **WHEN** examining api/v1alpha1/claw_types.go
+- **THEN** it SHALL still define ConditionReasonProvisioning = "Provisioning"
+- **THEN** this reason SHALL be used when one or both deployments are not ready
 
 ### Requirement: Condition type constants defined in API
 The API package SHALL define constants for condition types and reasons.
 
 #### Scenario: Condition type constants exist
 - **WHEN** examining api/v1alpha1/claw_types.go
-- **THEN** it SHALL define ConditionTypeReady = "Ready"
 - **THEN** it SHALL define ConditionTypeCredentialsResolved = "CredentialsResolved"
 - **THEN** it SHALL define ConditionTypeProxyConfigured = "ProxyConfigured"
 
 #### Scenario: Condition reason constants exist
 - **WHEN** examining api/v1alpha1/claw_types.go
-- **THEN** it SHALL define ConditionReasonReady = "Ready"
-- **THEN** it SHALL define ConditionReasonProvisioning = "Provisioning"
 - **THEN** it SHALL define ConditionReasonResolved = "Resolved"
 - **THEN** it SHALL define ConditionReasonValidationFailed = "ValidationFailed"
 - **THEN** it SHALL define ConditionReasonConfigured = "Configured"

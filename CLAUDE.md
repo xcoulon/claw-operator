@@ -29,9 +29,9 @@ Kubernetes operator (Go, Kubebuilder/Operator SDK) that manages OpenClaw instanc
 - `gatewayTokenSecretRef` (string, optional): Name of the Secret containing the gateway authentication token (`claw-gateway-token`)
 - `url` (string, optional): HTTPS URL for accessing the Claw instance
 - `conditions` ([]metav1.Condition, optional): Standard Kubernetes condition array tracking instance state. Condition types:
-  - `Ready`: Indicates whether the Claw instance is ready for use
+  - `DeploymentsReady`: Indicates whether the Claw deployment pods are running
     - `Status=False, Reason=Provisioning`: Deployments are not yet ready
-    - `Status=True, Reason=Ready`: Both `claw` and `claw-proxy` Deployments are available
+    - `Status=True, Reason=PodsRunning`: Both `claw` and `claw-proxy` Deployments are available
   - `CredentialsResolved`: Tracks credential validation status
     - `Status=True, Reason=Resolved`: All credentials validated successfully
     - `Status=False, Reason=ValidationFailed`: Credential validation failed
@@ -40,8 +40,8 @@ Kubernetes operator (Go, Kubebuilder/Operator SDK) that manages OpenClaw instanc
     - `Status=False, Reason=ConfigFailed`: Proxy configuration failed
 
 **Printcolumns:**
-- `Ready`: Shows Ready condition status via JSONPath `.status.conditions[?(@.type=="Ready")].status`
-- `Reason`: Shows Ready condition reason via JSONPath `.status.conditions[?(@.type=="Ready")].reason`
+- `Ready`: Shows DeploymentsReady condition status via JSONPath `.status.conditions[?(@.type=="DeploymentsReady")].status`
+- `Reason`: Shows DeploymentsReady condition reason via JSONPath `.status.conditions[?(@.type=="DeploymentsReady")].reason`
 
 **Credential Type Constants:**
 - `CredentialTypeAPIKey = "apiKey"` — Custom header injection
@@ -231,7 +231,7 @@ PHASE 3: ConfigMap Injection and Remaining Resources
 11. updateStatus(ctx, instance)
    ├─ Fetch claw Deployment and check Available condition
    ├─ Fetch claw-proxy Deployment and check Available condition
-   ├─ Set Claw Ready condition based on both deployment statuses
+   ├─ Set Claw DeploymentsReady condition based on both deployment statuses
    ├─ Set GatewayTokenSecretRef to gateway Secret name
    ├─ Populate instance.Status.URL with Route URL (if available)
    ├─ Update LastTransitionTime only if condition status changes
@@ -273,7 +273,7 @@ PHASE 3: ConfigMap Injection and Remaining Resources
 - `stampSecretVersionAnnotation()` — adds Secret ResourceVersion annotation to pod template BEFORE applying (ensures pod template changes trigger restarts when Secret data changes, not just reference)
 - `getDeploymentAvailableStatus()` — fetches Deployment and checks its Available condition
 - `checkDeploymentsReady()` — checks if both claw and claw-proxy Deployments are ready
-- `setReadyCondition()` — sets Ready condition on Claw based on deployment states
+- `setDeploymentsReadyCondition()` — sets DeploymentsReady condition on Claw based on deployment states
 - `updateStatus()` — updates Claw status conditions, GatewayTokenSecretRef, and URL field via status subresource
 - `parseYAMLToObjects()` — converts multi-doc YAML to unstructured objects
 - `readEmbeddedFile()` — reads files from embedded filesystem
