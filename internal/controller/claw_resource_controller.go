@@ -16,6 +16,8 @@ limitations under the License.
 
 package controller
 
+// ClawResourceReconciler reconciles Claw custom resources
+
 import (
 	"bytes"
 	"context"
@@ -318,17 +320,19 @@ func (r *ClawResourceReconciler) buildKustomizedObjects() ([]*unstructured.Unstr
 	// Write all manifest files (including kustomization.yaml) to in-memory filesystem
 	fs := filesys.MakeFsInMemory()
 	manifestFiles := map[string][]byte{
-		"manifests/kustomization.yaml":         readEmbeddedFile("manifests/kustomization.yaml"),
-		"manifests/configmap.yaml":             readEmbeddedFile("manifests/configmap.yaml"),
-		"manifests/pvc.yaml":                   readEmbeddedFile("manifests/pvc.yaml"),
-		"manifests/deployment.yaml":            readEmbeddedFile("manifests/deployment.yaml"),
-		"manifests/service.yaml":               readEmbeddedFile("manifests/service.yaml"),
-		"manifests/route.yaml":                 readEmbeddedFile("manifests/route.yaml"),
-		"manifests/proxy-configmap.yaml":       readEmbeddedFile("manifests/proxy-configmap.yaml"),
-		"manifests/proxy-deployment.yaml":      readEmbeddedFile("manifests/proxy-deployment.yaml"),
-		"manifests/proxy-service.yaml":         readEmbeddedFile("manifests/proxy-service.yaml"),
-		"manifests/networkpolicy.yaml":         readEmbeddedFile("manifests/networkpolicy.yaml"),
-		"manifests/ingress-networkpolicy.yaml": readEmbeddedFile("manifests/ingress-networkpolicy.yaml"),
+		"manifests/kustomization.yaml":             readEmbeddedFile("manifests/kustomization.yaml"),
+		"manifests/configmap.yaml":                 readEmbeddedFile("manifests/configmap.yaml"),
+		"manifests/pvc.yaml":                       readEmbeddedFile("manifests/pvc.yaml"),
+		"manifests/deployment.yaml":                readEmbeddedFile("manifests/deployment.yaml"),
+		"manifests/service.yaml":                   readEmbeddedFile("manifests/service.yaml"),
+		"manifests/route.yaml":                     readEmbeddedFile("manifests/route.yaml"),
+		"manifests/proxy-configmap.yaml":           readEmbeddedFile("manifests/proxy-configmap.yaml"),
+		"manifests/proxy-deployment.yaml":          readEmbeddedFile("manifests/proxy-deployment.yaml"),
+		"manifests/proxy-service.yaml":             readEmbeddedFile("manifests/proxy-service.yaml"),
+		"manifests/device-pairing-deployment.yaml": readEmbeddedFile("manifests/device-pairing-deployment.yaml"),
+		"manifests/device-pairing-service.yaml":    readEmbeddedFile("manifests/device-pairing-service.yaml"),
+		"manifests/networkpolicy.yaml":             readEmbeddedFile("manifests/networkpolicy.yaml"),
+		"manifests/ingress-networkpolicy.yaml":     readEmbeddedFile("manifests/ingress-networkpolicy.yaml"),
 	}
 	for path, content := range manifestFiles {
 		if err := fs.WriteFile(path, content); err != nil {

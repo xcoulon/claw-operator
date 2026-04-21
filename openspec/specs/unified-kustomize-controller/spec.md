@@ -37,7 +37,7 @@ The controller SHALL use the Kustomize API to build manifests in-memory from the
 #### Scenario: Kustomization file specifies resources
 - **WHEN** the Kustomize build executes
 - **THEN** it SHALL process the kustomization.yaml file in internal/assets/manifests/
-- **THEN** the kustomization SHALL reference all resource YAML files (configmap.yaml, pvc.yaml, deployment.yaml)
+- **THEN** the kustomization SHALL reference all resource YAML files (configmap.yaml, pvc.yaml, deployment.yaml, device-pairing-deployment.yaml, device-pairing-service.yaml)
 
 #### Scenario: Common labels applied via Kustomize
 - **WHEN** the Kustomize build executes

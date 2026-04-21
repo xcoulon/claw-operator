@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: claw-device-pairing
+  labels:
+    app: claw-device-pairing
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: claw-device-pairing
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: claw-device-pairing
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: device-pairing
+          image: quay.io/xcoulon/claw-device-pairing:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              memory: 128Mi
+              cpu: 100m
+            limits:
+              memory: 256Mi
+              cpu: 500m
+      imagePullSecrets:
+        - name: claw-device-pairing-quay-pull-secret
