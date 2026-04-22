@@ -63,6 +63,7 @@ const (
 	ClawNetworkPolicyName        = "claw-egress"
 	ClawIngressNetworkPolicyName = "claw-ingress"
 	ClawRouteName                = "claw"
+	ClawDevicePairingRouteName   = "claw-device-pairing"
 	ClawServiceName              = "claw"
 	ClawDeploymentName           = "claw"
 	ClawGatewaySecretName        = "claw-gateway-token"
@@ -96,6 +97,7 @@ type ClawResourceReconciler struct {
 // +kubebuilder:rbac:groups="",resources=persistentvolumeclaims,verbs=get;list;watch;create;update;patch
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch
 // +kubebuilder:rbac:groups=networking.k8s.io,resources=networkpolicies,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=route.openshift.io,resources=routes,verbs=get;list;watch;create;update;patch;delete
 
@@ -187,7 +189,7 @@ func (r *ClawResourceReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		return ctrl.Result{}, fmt.Errorf("failed to stamp secret version annotations: %w", err)
 	}
 
-	// Apply Route and wait for ingress host to be populated
+	// Apply Routes and wait for ingress host to be populated
 	var routeHost string
 	var routeApplied int
 	routeApplied, err = r.applyRouteOnly(ctx, objects, instance)
@@ -326,6 +328,7 @@ func (r *ClawResourceReconciler) buildKustomizedObjects() ([]*unstructured.Unstr
 		"manifests/deployment.yaml":                readEmbeddedFile("manifests/deployment.yaml"),
 		"manifests/service.yaml":                   readEmbeddedFile("manifests/service.yaml"),
 		"manifests/route.yaml":                     readEmbeddedFile("manifests/route.yaml"),
+		"manifests/device-pairing-route.yaml":      readEmbeddedFile("manifests/device-pairing-route.yaml"),
 		"manifests/proxy-configmap.yaml":           readEmbeddedFile("manifests/proxy-configmap.yaml"),
 		"manifests/proxy-deployment.yaml":          readEmbeddedFile("manifests/proxy-deployment.yaml"),
 		"manifests/proxy-service.yaml":             readEmbeddedFile("manifests/proxy-service.yaml"),
@@ -384,15 +387,17 @@ func (r *ClawResourceReconciler) applyResources(ctx context.Context, objects []*
 	return appliedCount, nil
 }
 
-// applyRouteOnly applies only the Route resource from provided objects
+// applyRouteOnly applies only the Route resources from provided objects with hostname injection
 // Returns number of routes applied (0 if CRD not registered)
 func (r *ClawResourceReconciler) applyRouteOnly(ctx context.Context, objects []*unstructured.Unstructured, instance *clawv1alpha1.Claw) (int, error) {
+	logger := log.FromContext(ctx)
+
 	// Handle empty objects safely (len() on nil slice returns 0)
 	if len(objects) == 0 {
 		return 0, nil
 	}
 
-	// Filter for Route only
+	// Filter for Routes only
 	routeObjects := []*unstructured.Unstructured{}
 	for _, obj := range objects {
 		if obj.GetKind() == RouteKind {
@@ -400,16 +405,60 @@ func (r *ClawResourceReconciler) applyRouteOnly(ctx context.Context, objects []*
 		}
 	}
 
-	// Set namespace and owner references
+	// Separate main Route from device pairing Route
+	var mainRoute, devicePairingRoute *unstructured.Unstructured
 	for _, obj := range routeObjects {
-		obj.SetNamespace(instance.Namespace)
-		if err := controllerutil.SetControllerReference(instance, obj, r.Scheme); err != nil {
-			return 0, fmt.Errorf("failed to set controller reference: %w", err)
+		if obj.GetName() == ClawRouteName {
+			mainRoute = obj
+		} else if obj.GetName() == ClawDevicePairingRouteName {
+			devicePairingRoute = obj
 		}
 	}
 
-	// Apply Route and return count
-	return r.applyResources(ctx, routeObjects)
+	// Apply main Route first (without explicit host - let OpenShift assign it)
+	if mainRoute != nil {
+		mainRoute.SetNamespace(instance.Namespace)
+		if err := controllerutil.SetControllerReference(instance, mainRoute, r.Scheme); err != nil {
+			return 0, fmt.Errorf("failed to set controller reference on main Route: %w", err)
+		}
+		if _, err := r.applyResources(ctx, []*unstructured.Unstructured{mainRoute}); err != nil {
+			return 0, fmt.Errorf("failed to apply main Route: %w", err)
+		}
+	}
+
+	// Get the assigned hostname from main Route status
+	routeHost := ""
+	if mainRoute != nil {
+		routeURL, err := r.getRouteURL(ctx, instance)
+		if err != nil {
+			return 0, fmt.Errorf("failed to get main Route hostname: %w", err)
+		}
+		if routeURL != "" {
+			// Extract just the host from https://host
+			routeHost = strings.TrimPrefix(routeURL, "https://")
+		}
+	}
+
+	// Apply device pairing Route with injected hostname
+	if devicePairingRoute != nil && routeHost != "" {
+		devicePairingRoute.SetNamespace(instance.Namespace)
+		if err := controllerutil.SetControllerReference(instance, devicePairingRoute, r.Scheme); err != nil {
+			return 0, fmt.Errorf("failed to set controller reference on device pairing Route: %w", err)
+		}
+
+		// Inject the hostname from main Route
+		if err := unstructured.SetNestedField(devicePairingRoute.Object, routeHost, "spec", "host"); err != nil {
+			return 0, fmt.Errorf("failed to inject hostname into device pairing Route: %w", err)
+		}
+
+		logger.Info("Injected hostname into device pairing Route", "host", routeHost)
+
+		if _, err := r.applyResources(ctx, []*unstructured.Unstructured{devicePairingRoute}); err != nil {
+			return 0, fmt.Errorf("failed to apply device pairing Route: %w", err)
+		}
+	}
+
+	return len(routeObjects), nil
 }
 
 // injectRouteHostIntoConfigMap replaces OPENCLAW_ROUTE_HOST placeholder in ConfigMap with actual Route host

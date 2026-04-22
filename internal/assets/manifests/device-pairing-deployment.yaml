@@ -23,7 +23,7 @@ spec:
       containers:
         - name: device-pairing
           image: quay.io/xcoulon/claw-device-pairing:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - name: http
               containerPort: 8080

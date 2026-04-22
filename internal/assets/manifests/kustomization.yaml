@@ -16,5 +16,6 @@ resources:
   - proxy-service.yaml
   - device-pairing-deployment.yaml
   - device-pairing-service.yaml
+  - device-pairing-route.yaml
   - networkpolicy.yaml
   - ingress-networkpolicy.yaml

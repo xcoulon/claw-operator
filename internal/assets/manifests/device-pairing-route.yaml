@@ -1,0 +1,20 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: claw-device-pairing
+  labels:
+    app: claw
+  # annotations:
+  #   haproxy.router.openshift.io/rewrite-target: /
+spec:
+  host: claw-xavier-claw.apps.crc.testing
+  path: /pair-device
+  to:
+    kind: Service
+    name: claw-device-pairing
+    weight: 100
+  port:
+    targetPort: 8080
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
